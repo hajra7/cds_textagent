@@ -1,0 +1,21 @@
+# Environment variables
+.env
+
+# Virtual environments
+venv/
+venv1/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# VS Code (optional, keep if solo project)
+.vscode/
+
+# Data (generated / large files)
+data/
+*.parquet
+
+# IDE settings
+.vscode/
+
