@@ -19,3 +19,5 @@ data/
 # IDE settings
 .vscode/
 
+#GPU check script
+gpu_check.py
