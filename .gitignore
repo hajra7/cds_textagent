@@ -13,11 +13,8 @@ __pycache__/
 .vscode/
 
 # Data (generated / large files)
-data/
-*.parquet
+data/raw/
+data/processed/
 
 # IDE settings
 .vscode/
-
-#GPU check script
-gpu_check.py
