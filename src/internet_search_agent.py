@@ -1,12 +1,8 @@
-from typing import TypedDict
-from langchain_openai import ChatOpenAI
 from langchain_core.tools import tool
-from langchain_core.tools import tool_node
 from langchain_community.tools import DuckDuckGoSearchResults
 import json
 from dotenv import load_dotenv
 import os
-from config import PUBMED_API_KEY
 
 # For PubMed search
 from Bio import Entrez
@@ -112,12 +108,18 @@ def search_pubmed(query: str, max_results: int = 5, years_ago: int = 10) -> str:
         JSON sring with Pubmed articles including titles, abstracts, author and PMIDs
     """
     try:
+        if not Entrez.email:
+            return json.dumps({
+                "error": "PUBMED_EMAIL is not configured.",
+                "suggestion": "Set PUBMED_EMAIL in your environment or .env file."
+            })
+
         #Build date filter
         date_filter = ""
         if years_ago > 0:
             current_year = datetime.now().year
             start_year = current_year - years_ago
-            date_filter = f" AND ({start_year} : {current_year})"
+            date_filter = f" AND {start_year}:{current_year}[pdat]"
 
             #Search Pubmed
         search_query = f"{query} {date_filter}"
@@ -154,17 +156,19 @@ def search_pubmed(query: str, max_results: int = 5, years_ago: int = 10) -> str:
         formatted_results = []
         for idx, article in enumerate(articles["PubmedArticle"], 1):
             try:
-                medline = article["MedlineCitation"]["Article"]
-                article_data = medline["Article"]
+                citation = article.get("MedlineCitation", {})
+                article_data = citation.get("Article", {})
 
                 #Extract information
-                pmid = str(medline["PMID"])
+                pmid = str(citation.get("PMID", "N/A"))
                 title = article_data.get("ArticleTitle", "N/A")
 
                 #Abstract
-                abstract_texts = article_data.get("Abstract", {}).get("AbstractText", "N/A")
-                if abstract_texts:
-                    abstract = "".join([str(text) for text in abstract_texts])[:500]
+                abstract_texts = article_data.get("Abstract", {}).get("AbstractText")
+                if isinstance(abstract_texts, (list, tuple)):
+                    abstract = "".join(str(text) for text in abstract_texts)[:500]
+                elif abstract_texts:
+                    abstract = str(abstract_texts)[:500]
                 else:
                     abstract = "No abstract available"
 
@@ -180,7 +184,13 @@ def search_pubmed(query: str, max_results: int = 5, years_ago: int = 10) -> str:
 
                 #Journal and date
                 journal = article_data.get("Journal", {}).get("Title", "Unknown Journal")
-                pub_date = article_data.get("DateCompleted", medline.get("DateRevised", {}))
+                pub_date = (
+                    article_data.get("Journal", {})
+                    .get("JournalIssue", {})
+                    .get("PubDate", {})
+                )
+                if not pub_date:
+                    pub_date = citation.get("DateCompleted", citation.get("DateRevised", {}))
                 year = pub_date.get("Year", "N/A")
 
                 formatted_results.append({
