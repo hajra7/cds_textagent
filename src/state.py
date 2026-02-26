@@ -55,7 +55,4 @@ def create_initial_state(query: str, session_id: str) -> MultiAgentState:
         # Output
         "final_answer":           "",
 
-        # Observability
-        "agents_used":            [],
-        "execution_trace":        [],
     }
