@@ -22,3 +22,10 @@ openpyxl
 
 python-dotenv
 pydantic
+
+fastapi
+uvicorn[standard]
+streamlit
+
+pypdf
+python-docx
