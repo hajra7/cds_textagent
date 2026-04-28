@@ -1,20 +1,43 @@
 # Environment variables
 .env
+.env.*
 
 # Virtual environments
 venv/
 venv1/
+.venv/
 
 # Python cache
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 
-# VS Code (optional, keep if solo project)
+# Package build / egg-info
+*.egg-info/
+dist/
+build/
+
+# VS Code / IDE
 .vscode/
+.cursor/
+.idea/
 
-# Data (generated / large files)
+# pytest
+.pytest_cache/
+
+# Data — raw inputs and vector stores (large/binary)
 data/raw/
 data/processed/
 
-# IDE settings
-.vscode/
+# Evaluation result files (generated output)
+data/eval/results/
+data/eval/questions.jsonl
+evaluation/processed/
+evaluation/metrics_overview.csv
+
+# BM25 / Chroma index artifacts (generated)
+src/cds_textagent/rag_pipeline/bm25_index/
+
+# Paper
+paper/

@@ -23,7 +23,7 @@ from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
 from langchain_chroma import Chroma
 
-from config import EXCEL_FILE_PATH, PROCESSED_DATA_DIR
+from cds_textagent.config import EXCEL_FILE_PATH, PROCESSED_DATA_DIR
 
 # Rate-limit detection helper (works for openai>=1.x)
 try:
@@ -57,9 +57,9 @@ def clean_text(text) -> str:
 
 
 def to_json_safe(x):
-    """Chroma metadata must be JSON-serializable: str/int/float/bool/None."""
+    """Chroma metadata must be JSON-serializable: str/int/float/bool. None is stripped by LangChain, so use empty string instead."""
     if pd.isna(x):
-        return None
+        return ""
     if hasattr(x, "item"):
         try:
             return x.item()

@@ -2,6 +2,7 @@
 RAG Pipeline - Text Utilities
 Entity extraction and text processing for the RAG pipeline
 """
+import json
 import re
 from typing import Dict, List, Optional
 from openai import OpenAI
@@ -43,10 +44,8 @@ Example: {{"age": "65", "gender": "male", "radiology_region": "chest"}}
         )
         
         result_text = response.choices[0].message.content.strip()
-        
-        # Parse JSON response
-        import json
-        # Remove markdown code blocks if present
+
+        # Parse JSON response — remove markdown code blocks if present
         result_text = re.sub(r'```json\s*', '', result_text)
         result_text = re.sub(r'```\s*', '', result_text)
         

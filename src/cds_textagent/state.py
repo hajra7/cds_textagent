@@ -1,6 +1,7 @@
 # state.py — Shared Graph State
 import operator
 from typing import Annotated, TypedDict, Any, Dict, List, Optional
+from langchain_core.messages import BaseMessage
 
 
 class MultiAgentState(TypedDict):
@@ -8,8 +9,9 @@ class MultiAgentState(TypedDict):
     query: str
     session_id: str
 
-    #  Planner outputs 
+    #  Planner outputs
     route_decision: str
+    is_chitchat: bool
     clinical_struct: Dict[str, Any]
     internet_search_query: Optional[str]    # targeted query for internet agent
     rag_query: Optional[str]                # targeted query for RAG agent
@@ -26,8 +28,11 @@ class MultiAgentState(TypedDict):
     #  Output 
     final_answer: str
 
-    #  Observability 
-    agents_used: Annotated[List[str], operator.add]         
+    #  Conversation history
+    messages: Annotated[List[BaseMessage], operator.add]
+
+    #  Observability
+    agents_used: Annotated[List[str], operator.add]
     execution_trace: Annotated[List[str], operator.add]     
 
 
@@ -40,6 +45,7 @@ def create_initial_state(query: str, session_id: str) -> MultiAgentState:
 
         # Planner
         "route_decision":         "",
+        "is_chitchat":            False,
         "clinical_struct":        {},
         "internet_search_query":  None,
         "rag_query":              None,
@@ -54,5 +60,12 @@ def create_initial_state(query: str, session_id: str) -> MultiAgentState:
 
         # Output
         "final_answer":           "",
+
+        # Conversation history
+        "messages":               [],
+
+        # Observability
+        "agents_used":            [],
+        "execution_trace":        [],
 
     }

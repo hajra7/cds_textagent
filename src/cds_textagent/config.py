@@ -11,7 +11,7 @@ load_dotenv()
 # ============================================================================
 # PROJECT PATHS
 # ============================================================================
-PROJECT_ROOT = Path(__file__).parent
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = PROJECT_ROOT / "data"
 RAW_DATA_DIR = DATA_DIR / "raw"
 PROCESSED_DATA_DIR = DATA_DIR / "processed"
@@ -67,13 +67,23 @@ TOP_K_FINAL = 10  # Return top 10 after reranking
 SIMILARITY_THRESHOLD = 0.5
 
 # Hybrid retrieval weights
-DENSE_WEIGHT = 0.7  # Weight for dense (FAISS) retrieval
+DENSE_WEIGHT = 0.7  # Weight for dense (embedding) retrieval
 SPARSE_WEIGHT = 0.3  # Weight for sparse (BM25) retrieval
+
+# Retrieval strategy: "dense" | "hybrid" | "ensemble" | "multi_query"
+RETRIEVAL_STRATEGY = "dense"
+
+# Multi-query retrieval
+MULTI_QUERY_NUM_REFORMULATIONS = 3
+
+# Reciprocal Rank Fusion constant (for hybrid/ensemble score fusion)
+RRF_K = 60
 
 # ============================================================================
 # ENTITY EXTRACTION (for metadata filtering)
 # ============================================================================
-ENTITY_EXTRACTION_MODEL = "gpt-4o-mini"
+ENTITY_EXTRACTION_MODEL = "mistral-small-latest"
+# ENTITY_EXTRACTION_MODEL = "gpt-4o-mini"
 ENTITY_EXTRACTION_TEMPERATURE = 0.0
 
 # Entities to extract from case_text
@@ -82,13 +92,31 @@ ENTITIES_TO_EXTRACT = ['age', 'gender', 'radiology_region']
 # ============================================================================
 # LLM CONFIGURATION
 # ============================================================================
-LLM_MODEL = "gpt-4o-mini"
+LLM_MODEL = "mistral-small-latest"
+# LLM_MODEL = "gpt-4o-mini"
 LLM_TEMPERATURE = 0.0
 LLM_MAX_TOKENS = 1500
+
+# Pluggable LLM backend — default: Mistral native API (api.mistral.ai)
+# Set MISTRAL_API_KEY in your .env to authenticate.
+# Alternative models (override via .env):
+#   Llama (Ollama) : AGENT_LLM_MODEL=llama3:8b-instruct  AGENT_LLM_BASE_URL=http://localhost:11434/v1  AGENT_LLM_API_KEY=ollama
+#   GPT (OpenAI)  : AGENT_LLM_MODEL=gpt-4o              AGENT_LLM_BASE_URL=                           AGENT_LLM_API_KEY=<openai-key>
+AGENT_LLM_MODEL = os.getenv("AGENT_LLM_MODEL", "mistral-small-latest")
+AGENT_LLM_BASE_URL = os.getenv("AGENT_LLM_BASE_URL") or None  # Not used for native Mistral
+AGENT_LLM_API_KEY = os.getenv("AGENT_LLM_API_KEY") or os.getenv("MISTRAL_API_KEY")
+
+# Planner-specific LLM (can differ from agent LLM)
+# Alternatives: PLANNER_LLM_MODEL=gpt-4o-mini  (OpenAI)
+#               PLANNER_LLM_MODEL=llama3:8b-instruct  PLANNER_LLM_BASE_URL=http://localhost:11434/v1  (Llama via Ollama)
+PLANNER_LLM_MODEL = os.getenv("PLANNER_LLM_MODEL", "mistral-small-latest")
+PLANNER_LLM_BASE_URL = os.getenv("PLANNER_LLM_BASE_URL") or None  # Not used for native Mistral
+PLANNER_LLM_API_KEY = os.getenv("PLANNER_LLM_API_KEY") or os.getenv("MISTRAL_API_KEY")
 
 # ============================================================================
 # API KEYS (from environment variables)
 # ============================================================================
+MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 PUBMED_API_KEY = os.getenv("PUBMED_API_KEY")

@@ -1,25 +1,23 @@
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
 from dotenv import load_dotenv
 from langchain_community.utilities import DuckDuckGoSearchAPIWrapper
 import os
+from typing import Any
 from langchain_core.tools import tool
-from langchain_core.messages import HumanMessage, ToolMessage
+
 import json
 import time
 from datetime import datetime
 from Bio import Entrez
-from langchain_openai import ChatOpenAI
+
 import logging
 
-from rag_pipeline.retriever import retrieve_and_format
+from cds_textagent.rag_pipeline.retriever import retrieve_and_format
 
 logger = logging.getLogger(__name__)
 
 load_dotenv()
+
+Entrez.timeout = 30  # type: ignore[attr-defined]  # seconds — prevent indefinite hangs
 
 try:
     search = DuckDuckGoSearchAPIWrapper()
@@ -140,10 +138,10 @@ def search_pubmed(query: str, max_results: int = 5, years_ago: int = 10) -> str:
             term=search_query, 
             retmax=max_results,
             sort="relevance")
-        search_results = Entrez.read(search_handle)
+        search_results: dict[str, Any] = dict(Entrez.read(search_handle))  # type: ignore[arg-type]
         search_handle.close()
 
-        id_list = search_results["IdList"]
+        id_list = list(search_results.get("IdList", []))
 
         if not id_list:
             return json.dumps({
@@ -160,12 +158,12 @@ def search_pubmed(query: str, max_results: int = 5, years_ago: int = 10) -> str:
             id=id_list,
             rettype="medline",
             retmode="xml")
-        articles = Entrez.read(fetch_handle)
+        articles: dict[str, Any] = dict(Entrez.read(fetch_handle))  # type: ignore[arg-type]
         fetch_handle.close()
 
         #Parse results
         formatted_results = []
-        for idx, article in enumerate(articles["PubmedArticle"], 1):
+        for idx, article in enumerate(articles.get("PubmedArticle", []), 1):
             try:
                 citation = article.get("MedlineCitation", {})
                 article_data = citation.get("Article", {})
@@ -234,5 +232,29 @@ def search_pubmed(query: str, max_results: int = 5, years_ago: int = 10) -> str:
         })
 
 
+# 4. Knowledge Base Search Tool (RAG)
+@tool
+def search_knowledge_base(query: str) -> str:
+    """
+    Search the internal clinical knowledge base for relevant case studies and articles.
+
+    Uses embedding-based retrieval with cross-encoder reranking over the
+    local ChromaDB vector store.
+
+    Args:
+        query: Clinical question or search query.
+
+    Returns:
+        Formatted string with the top matching documents, including
+        embedding similarity and reranker scores.
+    """
+    try:
+        context = retrieve_and_format(query)
+        return context
+    except Exception as e:
+        return json.dumps({"error": f"Knowledge base search failed: {str(e)}"})
+
+
 if __name__ == "__main__":
     pass
+
